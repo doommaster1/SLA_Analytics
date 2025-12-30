@@ -11,533 +11,427 @@ import {
   ScatterController,
   Title, Tooltip,
 } from 'chart.js';
-import React, { useEffect, useState } from 'react';
-import { Bar, Doughnut, Line, Pie, Scatter } from 'react-chartjs-2'; // Import chart types
+import { useEffect, useMemo, useState } from 'react';
+import { Bar, Doughnut, Line, Pie, Scatter } from 'react-chartjs-2';
+import { useSearchParams } from 'react-router-dom';
 
-// Register necessary Chart.js components
+// --- 1. REGISTER KOMPONEN CHART ---
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, BarElement, ScatterController, PieController, ArcElement,
   Title, Tooltip, Legend
 );
 
-// Define consistent cluster colors outside the component (optional but helpful)
+const API_BASE_URL = 'http://localhost:8000/api/stats'; 
+
+// --- 2. WARNA VISUALISASI ---
 const clusterColors = [
-  'rgba(102, 126, 234, 0.8)', // Cluster 0 - Blueish
-  'rgba(72, 187, 120, 0.8)',  // Cluster 1 - Greenish
-  'rgba(245, 101, 101, 0.8)', // Cluster 2 - Reddish
-  'rgba(246, 173, 85, 0.8)'   // Cluster 3 - Orangish
+  'rgba(59, 130, 246, 0.8)', // Biru
+  'rgba(72, 187, 120, 0.8)', // Hijau
+  'rgba(239, 68, 68, 0.8)',  // Merah
 ];
-const clusterBorderColors = [ // Optional: for borders if needed
-  '#667eea',
+const clusterBorderColors = [ 
+  '#3b82f6',
   '#48bb78',
-  '#f56565',
-  '#f6ad55'
+  '#ef4444'
 ];
 
 const Analytics = () => {
-  // State for all chart data fetched from API
-  const [violationData, setViolationData] = useState(null); // Processed data for violation chart
-  const [trendData, setTrendData] = useState(null);       // Processed data for trend chart
-  const [importanceData, setImportanceData] = useState(null); // Processed data for importance chart
-  const [clusterAPIData, setClusterAPIData] = useState(null); // Holds the RAW API response for /api/clusters/
+  // --- 3. STATE MANAGEMENT ---
+  const [violationData, setViolationData] = useState(null);
+  const [trendData, setTrendData] = useState(null);
+  const [importanceData, setImportanceData] = useState(null);
+  const [clusterAPIData, setClusterAPIData] = useState(null);
+  
+  const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
 
-  // Combined loading and error states
-  const [loading, setLoading] = useState({
-    violation: true,
-    trend: true,
-    importance: true,
-    clusters: true,
-  });
-  const [error, setError] = useState(null);
+  // --- 4. DATA MANUAL (HARDCODED) UNTUK KARTU & TABEL ---
+  
+  const clusterSummaryData = [
+    {
+      id: 0,
+      colorHex: '#3b82f6', // Biru
+      title: "Cluster 0: Kepatuhan SLA Sedang",
+      size: "35,955 (72.2%)",
+      item: "ETP (13%)",
+      hour: "09:00 (16.5%)",
+      sla: "0.25 – 1.00 (Avg 0.40%)",
+      res_time: "3.13 – 10.78 (Avg. 5.49 Hari)",
+      insight: "Mayoritas tiket masuk di sini. Performa stabil dengan volume tinggi di jam kerja pagi."
+    },
+    {
+      id: 1,
+      colorHex: '#ef4444', // Merah
+      title: "Cluster 1: Kepatuhan SLA Rendah",
+      size: "9,295 (18.7%)",
+      item: "Network (26.2%)",
+      hour: "09:00 (12.6%)",
+      sla: "0.00 – 0.39 (Avg 0.22%) ⚠️",
+      res_time: "3.39 – 28.05 (Avg 6.17 Hari)",
+      insight: "SLA terendah dan waktu resolusi terlama. Perlu investigasi khusus pada Application 268."
+    },
+    {
+      id: 2,
+      colorHex: '#10b981', // Hijau
+      title: "Cluster 2: Kepatuhan SLA Tinggi",
+      size: "4,586 (9.2%)",
+      item: "One Credit Card ",
+      hour: "18:00 (15.8%)",
+      sla: "0.17 – 1.00 (Avg 0.43%) ✅",
+      res_time: "3.53 – 10.78 (Avg 5.53 Hari)",
+      insight: "Tiket sore hari dengan penanganan paling efisien dan kepatuhan SLA tertinggi."
+    }
+  ];
 
-  // Single useEffect to fetch all data on component mount
+  const categoricalComparisonData = [
+    { feature: "Item (Dominan)", c0: "ETP (13%)", c1: "Network (26.2%)", c2: "One Credit Card (12,6%)" },
+    { feature: "Creation Day", c0: "Monday (23.8%)", c1: "Monday (20.1%)", c2: "Tuesday (16,8%)" },
+    { feature: "Creation Hour", c0: "09:00 (16.5%)", c1: "09:00 (12.6%)", c2: "18:00 (15.8%)" },
+    { feature: "SLA Deadline Day", c0: "Monday (23.8%)", c1: "Friday (23,7%)", c2: "Friday (30.3%)" },
+    { feature: "Open Month", c0: "July (15.8%)", c1: "July (11.3%)", c2: "February (14.1%)" }
+  ];
+
+  // --- 5. FETCH DATA API ---
+  
+  const filters = useMemo(() => {
+    return `?priority=${searchParams.get('priority') || 'all'}&is_sla_violated=${searchParams.get('is_sla_violated') || 'all'}`;
+  }, [searchParams]);
+
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates on unmounted component
-
-    // Helper function to fetch and process data
-    const fetchData = async (url, dataSetter, loadingKey, processFunc = null) => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status} fetching ${loadingKey}`);
-        }
-        let data = await response.json();
-        // Optional processing step specific to each fetch
-        if (processFunc) {
-          data = processFunc(data); // Process into ChartJS format
-        }
-        if (isMounted) {
-          dataSetter(data); // Set the processed (or raw for clusters) data
-        }
+        const [violRes, trendRes, impRes, clustRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/violation-by-category/${filters}`),
+            fetch(`${API_BASE_URL}/monthly-trend/${filters}`),
+            fetch(`${API_BASE_URL}/feature-importance/`),
+            fetch(`http://localhost:8000/api/clusters/`)
+        ]);
+
+        const vData = await violRes.json();
+        const tData = await trendRes.json();
+        const iData = await impRes.json();
+        const cData = await clustRes.json();
+
+        setViolationData(processViolationData(vData));
+        setTrendData(processTrendData(tData));
+        setImportanceData(processImportanceData(iData));
+        setClusterAPIData(cData);
+        setLoading(false);
+
       } catch (err) {
-        console.error(`Error fetching ${loadingKey}:`, err);
-        if (isMounted) {
-          setError(prev => prev ? `${prev}\nFailed to load ${loadingKey}.` : `Failed to load ${loadingKey}.`);
-          dataSetter(null); // Set data to null on error
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(prev => ({ ...prev, [loadingKey]: false }));
-        }
+        console.error("Error fetching data:", err);
+        setLoading(false); 
       }
     };
+    fetchData();
+  }, [filters]);
 
-    // --- Define Processing Functions ---
+  // --- 6. FUNGSI PROSES DATA STATISTIK UMUM ---
 
-    // Process Violation Data for ChartJS
-    const processViolationData = (apiData) => {
-        if (!apiData || apiData.length === 0) return null;
-        const sortedData = [...apiData].sort((a, b) => b.violation_rate - a.violation_rate);
-        return {
-            labels: sortedData.map(d => d.category),
-            datasets: [{
-                label: 'Tingkat Pelanggaran SLA (%)',
-                data: sortedData.map(d => d.violation_rate),
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: 1,
-            }],
-            tooltipData: sortedData.map(d => `Total: ${d.total_tickets}`),
-        };
+  const processViolationData = (data) => {
+    if (!data?.length) return null;
+    const sorted = [...data].sort((a, b) => b.violation_rate - a.violation_rate);
+    return {
+      labels: sorted.map(d => d.category),
+      datasets: [{
+        label: 'Pelanggaran SLA (%)',
+        data: sorted.map(d => d.violation_rate),
+        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+        borderRadius: 4,
+      }]
     };
+  };
 
-    // Process Trend Data for ChartJS
-    const processTrendData = (apiData) => {
-      if (!apiData || apiData.length === 0) return null;
-      return {
-        labels: apiData.map(d => d.month),
-        datasets: [
-          { label: 'Total Tiket Dibuka', data: apiData.map(d => d.total_tickets), borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.5)', tension: 0.1 },
-          { label: 'Tiket Melanggar SLA', data: apiData.map(d => d.violated_tickets), borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.5)', tension: 0.1 },
-        ],
-      };
+  const processTrendData = (data) => {
+    if (!data?.length) return null;
+    return {
+      labels: data.map(d => d.month),
+      datasets: [
+        { label: 'Total Tiket', data: data.map(d => d.total_tickets), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.5)', tension: 0.3 },
+        { label: 'Melanggar SLA', data: data.map(d => d.violated_tickets), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.5)', tension: 0.3 }
+      ]
     };
+  };
 
-    // Process Importance Data for ChartJS
-    const processImportanceData = (apiData) => {
-      if (!apiData || apiData.length === 0) return null;
-      const sortedData = [...apiData].sort((a, b) => b.importance - a.importance);
-      return {
-        labels: sortedData.map(d => d.feature),
-        datasets: [{
-          label: 'Feature Importance Score',
-          data: sortedData.map(d => d.importance),
-          backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1,
-        }],
-      };
+  const processImportanceData = (data) => {
+    if (!data?.length) return null;
+    const sorted = [...data].sort((a, b) => b.importance - a.importance);
+    return {
+      labels: sorted.map(d => d.feature),
+      datasets: [{
+        label: 'Importance Score',
+        data: sorted.map(d => d.importance),
+        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+        indexAxis: 'y',
+        borderRadius: 4,
+      }]
     };
+  };
 
-    // --- Perform Fetches ---
-    fetchData('http://localhost:8000/api/stats/violation-by-category/', setViolationData, 'violation', processViolationData);
-    fetchData('http://localhost:8000/api/stats/monthly-trend/', setTrendData, 'trend', processTrendData);
-    fetchData('http://localhost:8000/api/stats/feature-importance/', setImportanceData, 'importance', processImportanceData);
-    // Fetch raw cluster data, processing will happen using useMemo below
-    fetchData('http://localhost:8000/api/clusters/', setClusterAPIData, 'clusters');
-
-    // Cleanup function
-    return () => {
-      isMounted = false;
+  // --- 7. MEMO DATA UNTUK SCATTER & CLUSTER CHARTS (DINAMIS) ---
+  
+  // A. Scatter Plots
+  const visualScatterData = useMemo(() => {
+    if (!clusterAPIData?.visual_scatter?.datasets) return null;
+    return {
+      datasets: clusterAPIData.visual_scatter.datasets.map((ds, index) => ({
+        ...ds,
+        backgroundColor: clusterColors[index % clusterColors.length],
+        label: `Cluster ${index}` 
+      }))
     };
-  }, []); // Empty dependency array means this runs only once on mount
+  }, [clusterAPIData]);
 
-  // --- Process Cluster API Data into Chart-Specific Formats using useMemo ---
-
-  const pcaScatterData = React.useMemo(() => {
+  const pcaScatterData = useMemo(() => {
     if (!clusterAPIData?.pca_scatter?.datasets) return null;
     return {
-        datasets: clusterAPIData.pca_scatter.datasets.map((ds, index) => ({
-            ...ds,
-            backgroundColor: ds.backgroundColor || clusterColors[index % clusterColors.length]
-        }))
+      datasets: clusterAPIData.pca_scatter.datasets.map((ds, index) => ({
+        ...ds,
+        backgroundColor: clusterColors[index % clusterColors.length],
+        label: `Cluster ${index}` 
+      }))
     };
   }, [clusterAPIData]);
 
-  const meanBarData = React.useMemo(() => {
-     // Check if the specific structure for mean_bar exists in the API response
-    if (!clusterAPIData?.mean_bar?.datasets) return null;
-    return clusterAPIData.mean_bar; // Use the structure directly if backend provides it
+  const mcaScatterData = useMemo(() => {
+    if (!clusterAPIData?.mca_scatter?.datasets) return null;
+    return {
+      datasets: clusterAPIData.mca_scatter.datasets.map((ds, index) => ({
+        ...ds,
+        backgroundColor: clusterColors[index % clusterColors.length],
+        label: `Cluster ${index}` 
+      }))
+    };
   }, [clusterAPIData]);
 
-  const clusterSizePieData = React.useMemo(() => {
-    // Check if the specific structure for cluster_size_pie exists
+  // B. Cluster Comparison Charts
+  const meanBarNumericalData = useMemo(() => {
+    if (!clusterAPIData?.mean_bar_numerical?.datasets) return null; 
+    const top_cols = clusterAPIData.numerical_columns?.slice(0, 5) || [];
+    return {
+      labels: clusterAPIData.mean_bar_numerical.labels,
+      datasets: clusterAPIData.mean_bar_numerical.datasets
+        .filter(ds => top_cols.includes(ds.label))
+        .map((ds, index) => ({
+          ...ds,
+          backgroundColor: `hsl(${index * 60}, 70%, 60%)`,
+          borderRadius: 4
+      }))
+    };
+  }, [clusterAPIData]);
+
+  const clusterSizePieData = useMemo(() => {
     if (!clusterAPIData?.cluster_size_pie?.datasets) return null;
-    return clusterAPIData.cluster_size_pie; // Use the structure directly
+    return clusterAPIData.cluster_size_pie; 
   }, [clusterAPIData]);
 
-  // --- Hardcoded Data for Converted Cluster Charts ---
+  // C. Advanced Metrics
+  const clusterComplianceBarData = useMemo(() => {
+    if (!clusterAPIData?.sla_compliance_bar?.datasets) return null; 
+    return {
+      labels: clusterAPIData.sla_compliance_bar.labels,
+      datasets: clusterAPIData.sla_compliance_bar.datasets.map((ds) => ({
+        ...ds,
+        backgroundColor: clusterColors,
+        borderRadius: 6
+      }))
+    };
+  }, [clusterAPIData]);
 
-  const clusterComplianceData = {
-    labels: ['Cluster 0\n(SIBS Off-Hour)', 'Cluster 1\n(ETP Regular)', 'Cluster 2\n(Network)', 'Cluster 3\n(ETP Morning)'],
-    datasets: [{
-      label: 'SLA Compliance Rate',
-      data: [36.87, 39.24, 20.67, 38.98],
-      backgroundColor: clusterColors,
-      borderColor: clusterBorderColors,
-      borderWidth: 2,
-      borderRadius: 8
-    }]
-  };
+  const clusterResolutionBarData = useMemo(() => {
+    if (!clusterAPIData?.resolution_time_bar?.datasets) return null; 
+    return {
+      labels: clusterAPIData.resolution_time_bar.labels,
+      datasets: clusterAPIData.resolution_time_bar.datasets.map((ds) => ({
+        ...ds,
+        backgroundColor: clusterColors,
+        borderRadius: 6
+      }))
+    };
+  }, [clusterAPIData]);
 
-  const clusterResolutionData = {
-    labels: ['Cluster 0\n(SIBS)', 'Cluster 1\n(ETP)', 'Cluster 2\n(Network)', 'Cluster 3\n(ETP)'],
-    datasets: [{
-      label: 'Avg Resolution Time (hours)',
-      data: [5.74, 5.48, 6.58, 5.47],
-      backgroundColor: clusterColors,
-      borderColor: clusterBorderColors,
-      borderWidth: 2,
-      borderRadius: 8
-    }]
-  };
+  const centroidScatterData = useMemo(() => {
+    if (!clusterAPIData?.centroid_scatter?.datasets) return null; 
+    return {
+      datasets: clusterAPIData.centroid_scatter.datasets.map((ds, index) => ({
+        ...ds,
+        backgroundColor: clusterColors[index % clusterColors.length],
+        pointRadius: 10,
+        label: `Centroid Cluster ${index}`
+      }))
+    };
+  }, [clusterAPIData]);
 
-  const clusterApplicationData = {
-    labels: ['SIBS (App 85)', 'ETP (App 97)', 'Network (App 268)', 'ETP Morning (App 97)'],
-    datasets: [{
-      data: [25, 35, 15, 25],
-      backgroundColor: clusterColors,
-      borderWidth: 2,
-      borderColor: '#fff'
-    }]
-  };
+  // D. App Doughnut (Derived from Pie Data)
+  const clusterApplicationData = useMemo(() => {
+    if (!clusterSizePieData) return null;
+    return {
+        labels: clusterSizePieData.labels, 
+        datasets: clusterSizePieData.datasets.map(ds => ({
+            ...ds,
+            backgroundColor: clusterColors,
+            borderColor: '#fff',
+            borderWidth: 2
+        }))
+    };
+  }, [clusterSizePieData]);
 
-  const clusterScatterData = {
-    datasets: [{
-      label: 'Cluster 0 (SIBS)',
-      data: [
-        {x: 0.10, y: 5.74},
-        {x: 0.11, y: 5.65},
-        {x: 0.09, y: 5.82}
-      ],
-      backgroundColor: clusterColors[0],
-      borderColor: clusterBorderColors[0],
-      pointRadius: 8
-    }, {
-      label: 'Cluster 1 (ETP Regular)',
-      data: [
-        {x: 0.13, y: 5.48},
-        {x: 0.14, y: 5.42},
-        {x: 0.12, y: 5.55}
-      ],
-      backgroundColor: clusterColors[1],
-      borderColor: clusterBorderColors[1],
-      pointRadius: 8
-    }, {
-      label: 'Cluster 2 (Network)',
-      data: [
-        {x: 0.14, y: 6.58},
-        {x: 0.15, y: 6.45},
-        {x: 0.13, y: 6.70}
-      ],
-      backgroundColor: clusterColors[2],
-      borderColor: clusterBorderColors[2],
-      pointRadius: 8
-    }, {
-      label: 'Cluster 3 (ETP Morning)',
-      data: [
-        {x: 0.15, y: 5.47},
-        {x: 0.14, y: 5.40},
-        {x: 0.16, y: 5.52}
-      ],
-      backgroundColor: clusterColors[3],
-      borderColor: clusterBorderColors[3],
-      pointRadius: 8
-    }]
-  };
-
-  // --- Chart Options Definitions (Using useMemo for stability) ---
-
-  const violationOptions = React.useMemo(() => ({
-    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }, title: { display: true, text: 'Top Kategori: Tingkat Pelanggaran SLA (%)' },
-      tooltip: {
-        callbacks: {
-          label: (context) => `${context.dataset.label}: ${context.parsed.x.toFixed(1)}%`,
-          footer: (tooltipItems) => {
-            const index = tooltipItems[0].dataIndex;
-            return violationData?.tooltipData?.[index] || ''; // Access processed data state
-          }
-        }
-      }
-    },
-    scales: { x: { beginAtZero: true, max: 100, title: { display: true, text: '%' } }, y: { title: { display: true, text: 'Kategori' } } },
-  }), [violationData]); // Dependency on violationData because tooltipData is there
-
-  const trendOptions = React.useMemo(() => ({
+  // --- 8. OPSI CHART (OPTIONS) ---
+  
+  const barOptions = { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } };
+  const lineOptions = { responsive: true, maintainAspectRatio: false };
+  const scatterOptions = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' }, title: { display: true, text: 'Tren Tiket Dibuka vs Melanggar SLA per Bulan' } },
-    scales: { y: { beginAtZero: true, title: { display: true, text: 'Jumlah Tiket' } } },
-  }), []);
-
-  const importanceOptions = React.useMemo(() => ({
-    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }, title: { display: true, text: 'Top Faktor Paling Berpengaruh (Model RF)' },
-      tooltip: { callbacks: { label: (context) => `Score: ${context.parsed.x.toFixed(3)}` } }
-    },
-    scales: { x: { beginAtZero: true, title: { display: true, text: 'Importance Score' } }, y: { title: { display: true, text: 'Fitur' } } },
-  }), []);
-
-  const pcaScatterOptions = React.useMemo(() => ({
+    plugins: { legend: { display: true, position: 'top' } },
+    scales: { x: { grid: { display: false } }, y: { grid: { display: false } } },
+  };
+  const slaResBarOptions = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, position: 'top' }, title: {display: true, text: 'Distribusi Cluster (PCA)'}},
-    scales: { x: { title: { display: true, text: 'PCA Component 1' } }, y: { title: { display: true, text: 'PCA Component 2' } } },
-  }), []);
-
-  const meanBarOptions = React.useMemo(() => ({ // Options for the Mean Bar chart
-    indexAxis: 'y', // Horizontal bars
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: true, position: 'top' }, title: { display: true, text: 'Rata-rata Fitur Numerik per Cluster' } },
-    scales: { x: { title: { display: true, text: 'Rata-rata Nilai' } }, y: { title: { display: true, text: 'Cluster' } } },
-  }), []);
-
-  const pieOptions = React.useMemo(() => ({
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: 'top' }, title: {display: true, text: 'Ukuran Relatif Cluster'} },
-  }), []);
-
-  // --- Options for Converted Cluster Charts ---
-
-  const clusterComplianceOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => 'SLA Rate: ' + context.parsed.y.toFixed(2) + '%'
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 50,
-        grid: {
-          color: 'rgba(0,0,0,0.1)'
-        },
-        ticks: {
-          callback: (value) => value + '%'
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        }
-      }
-    }
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
   };
+  const pieOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
 
-  const clusterResolutionOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => 'Avg Time: ' + context.parsed.y.toFixed(2) + ' hours'
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 8,
-        grid: {
-          color: 'rgba(0,0,0,0.1)'
-        },
-        ticks: {
-          callback: (value) => value + 'h'
-        }
-      },
-      x: {
-        grid: {
-          display: false
-        }
-      }
-    }
-  };
-
-  const clusterApplicationOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          padding: 15,
-          usePointStyle: true
-        }
-      }
-    }
-  };
-
-  const clusterScatterOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          usePointStyle: true,
-          padding: 15
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Days to Due',
-          font: {
-            weight: 'bold'
-          }
-        },
-        grid: {
-          color: 'rgba(0,0,0,0.1)'
-        }
-      },
-      y: {
-        title: {
-          display: true,
-          text: 'Avg Resolution Time (hours)',
-          font: {
-            weight: 'bold'
-          }
-        },
-        grid: {
-          color: 'rgba(0,0,0,0.1)'
-        }
-      }
-    }
-  };
-
-  // --- JSX Rendering ---
+  // --- 9. RENDER UTAMA ---
   return (
-    <section id="analytics" className="content-section active">
-      {/* Existing Chart Grid */}
-      <div className="chart-grid">
-        {/* Violation Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-          <h4>Pelanggaran per Kategori</h4>
-          {loading.violation ? <p>Loading...</p> : (violationData ? <Bar options={violationOptions} data={violationData} /> : <p>Data tidak tersedia.</p>)}
-        </div>
-        {/* Trend Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-          <h4>Tren Bulanan</h4>
-          {loading.trend ? <p>Loading...</p> : (trendData ? <Line options={trendOptions} data={trendData} /> : <p>Data tidak tersedia.</p>)}
-        </div>
-        {/* Importance Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-          <h4>Fitur Penting RF</h4>
-          {loading.importance ? <p>Loading...</p> : (importanceData ? <Bar options={importanceOptions} data={importanceData} /> : <p>Data tidak tersedia.</p>)}
-        </div>
-        {/* PCA Scatter Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-          <h4>Distribusi Cluster (PCA Scatter)</h4>
-          {loading.clusters ? <p>Loading...</p> : (pcaScatterData ? <Scatter options={pcaScatterOptions} data={pcaScatterData} /> : <p>Data PCA tidak tersedia.</p>)}
-        </div>
-        {/* Mean Bar Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-           <h4>Rata-rata Fitur Numerik per Cluster</h4>
-           {loading.clusters ? <p>Loading...</p> : (meanBarData ? <Bar options={meanBarOptions} data={meanBarData} /> : <p>Data Rata-rata Fitur tidak tersedia.</p>)}
-        </div>
-         {/* Cluster Size Pie Chart */}
-        <div className="chart-container" style={{height: '400px'}}>
-          <h4>Ukuran Relatif Cluster (Pie)</h4>
-          {loading.clusters ? <p>Loading...</p> : (clusterSizePieData ? <Pie options={pieOptions} data={clusterSizePieData} /> : <p>Data Ukuran Cluster tidak tersedia.</p>)}
-        </div>
-      </div>
-
-      {/* Converted Cluster Charts Grid */}
-      <div className="chart-grid">
-        <div className="chart-container">
-          <h4>Perbandingan SLA Compliance Rate per Cluster</h4>
-          <div style={{position: 'relative', height: '300px'}}>
-            <Bar data={clusterComplianceData} options={clusterComplianceOptions} />
+    <section id="analytics" className="content-section active" style={{paddingBottom: '60px'}}>
+      {loading ? <div className="text-center p-10" style={{color: '#64748b'}}>Memuat data analitik...</div> : (
+        <>
+          {/* --- BAGIAN 1: STATISTIK UMUM --- */}
+          <div className="chart-grid">
+            <div className="chart-container" style={{height: '350px'}}>
+              <h4 style={{marginBottom: '15px', color: '#1e293b'}}>Pelanggaran per Kategori</h4>
+              {violationData ? <Bar data={violationData} options={barOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
+            <div className="chart-container" style={{height: '350px'}}>
+              <h4 style={{marginBottom: '15px', color: '#1e293b'}}>Tren Bulanan</h4>
+              {trendData ? <Line data={trendData} options={lineOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
+            <div className="chart-container" style={{height: '350px'}}>
+              <h4 style={{marginBottom: '15px', color: '#1e293b'}}>Fitur Paling Berpengaruh (RF)</h4>
+              {importanceData ? <Bar data={importanceData} options={barOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
           </div>
-        </div>
-        
-        <div className="chart-container">
-          <h4>Average Resolution Time per Cluster</h4>
-          <div style={{position: 'relative', height: '300px'}}>
-            <Bar data={clusterResolutionData} options={clusterResolutionOptions} />
+
+          <hr style={{margin: '50px 0', borderTop: '2px dashed #cbd5e1'}} />
+          
+          <h3 style={{textAlign: 'center', marginBottom: '40px', color: '#0f172a', fontSize: '1.5rem', fontWeight: 'bold'}}>
+            🔍 Analisis Segmentasi (K-Prototypes)
+          </h3>
+
+          {/* --- BAGIAN 2: SCATTER PLOTS (DINAMIS) --- */}
+          <div className="chart-grid">
+            <div className="chart-container" style={{height: '400px'}}>
+               <h4 style={{color: '#1e293b'}}>Distribusi Hybrid (UMAP)</h4>
+               {visualScatterData ? <Scatter data={visualScatterData} options={scatterOptions} /> : <p>Menunggu data...</p>}
+            </div>
+            <div className="chart-container" style={{height: '400px'}}>
+               <h4 style={{color: '#1e293b'}}>Pola Numerik (PCA)</h4>
+               {pcaScatterData ? <Scatter data={pcaScatterData} options={scatterOptions} /> : <p>Menunggu data...</p>}
+            </div>
+            <div className="chart-container" style={{height: '400px'}}>
+               <h4 style={{color: '#1e293b'}}>Pola Kategorikal (MCA)</h4>
+               {mcaScatterData ? <Scatter data={mcaScatterData} options={scatterOptions} /> : <p>Menunggu data...</p>}
+            </div>
           </div>
-        </div>
 
-        <div className="chart-container">
-          <h4>Distribusi Aplikasi Dominan per Cluster</h4>
-          <div style={{position: 'relative', height: '300px'}}>
-            <Doughnut data={clusterApplicationData} options={clusterApplicationOptions} />
+          {/* --- BAGIAN 3: PROFIL CLUSTER (DINAMIS) --- */}
+          <div className="chart-grid" style={{marginTop: '30px'}}>
+            {/* Mean Bar */}
+            <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>Rata-rata Fitur Numerik (Top 5)</h4>
+                {meanBarNumericalData ? <Bar data={meanBarNumericalData} options={barOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
+             {/* Pie Size */}
+             <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>Ukuran Cluster Berdasarkan Item</h4>
+                {clusterSizePieData ? <Pie data={clusterSizePieData} options={pieOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
+             {/* SLA Compliance */}
+             <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>SLA Compliance Rate (%)</h4>
+                {clusterComplianceBarData ? <Bar data={clusterComplianceBarData} options={{...slaResBarOptions, scales:{y:{max:50, beginAtZero:true}}}} /> : <p>Data tidak tersedia</p>}
+            </div>
+             {/* Res Time */}
+             <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>Avg Resolution Time (Menit)</h4>
+                {clusterResolutionBarData ? <Bar data={clusterResolutionBarData} options={slaResBarOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
+            {/* Centroid Scatter */}
+            <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>Centroid: Due vs Duration</h4>
+                {centroidScatterData ? <Scatter data={centroidScatterData} options={{...scatterOptions, plugins:{legend:{position:'bottom'}}}} /> : <p>Data tidak tersedia</p>}
+            </div>
+             {/* App Doughnut */}
+             <div className="chart-container" style={{height: '400px'}}>
+                <h4 style={{color: '#1e293b'}}>Distribusi Aplikasi</h4>
+                {clusterApplicationData ? <Doughnut data={clusterApplicationData} options={pieOptions} /> : <p>Data tidak tersedia</p>}
+            </div>
           </div>
-        </div>
 
-        <div className="chart-container">
-          <h4>Days to Due vs Resolution Time</h4>
-          <div style={{position: 'relative', height: '300px'}}>
-            <Scatter data={clusterScatterData} options={clusterScatterOptions} />
+          <div style={{height: '40px'}}></div>
+
+          {/* {--- BAGIAN 4: KARTU DETAIL CLUSTER (MANUAL) --- */}
+          <div className="cluster-cards-grid">
+            {clusterSummaryData.map((cluster) => (
+              <div key={cluster.id} className="cluster-card" style={{
+                background: `linear-gradient(135deg, ${cluster.colorHex}, rgba(15, 23, 42, 0.9))`,
+                color: 'white',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+                padding: '25px',
+                borderRadius: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                    <h4 style={{borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '12px', marginBottom: '15px', fontSize: '1.1rem'}}>
+                        {cluster.title}
+                    </h4>
+                    <div style={{fontSize: '0.95rem', lineHeight: '1.8', opacity: 0.95}}>
+                        <p><strong>📦 Size:</strong> {cluster.size}</p>
+                        <p><strong>⭐ Item:</strong> {cluster.item}</p>
+                        <p><strong>⏰ Jam:</strong> {cluster.hour}</p>
+                        <p><strong>✅ SLA Rate:</strong> {cluster.sla}</p>
+                        <p><strong>⏱️ Avg Res:</strong> {cluster.res_time}</p>
+                    </div>
+                </div>
+                <div style={{marginTop: '20px', padding: '12px', background: 'rgba(0,0,0,0.25)', borderRadius: '10px', fontSize: '0.85rem', fontStyle: 'italic', borderLeft: '4px solid rgba(255,255,255,0.4)'}}>
+                    "{cluster.insight}"
+                </div>
+              </div>
+            ))}
+          </div> 
+
+          {/* --- BAGIAN 5: TABEL PERBANDINGAN --- */}
+          <div style={{ marginTop: '50px', overflowX: 'auto', padding: '0 5px' }}>
+            <h4 style={{ color: '#334155', marginBottom: '20px', textAlign: 'center', fontWeight: '600' }}>
+                📋 Perbandingan Modus Fitur Kategorikal
+            </h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+              <thead>
+                <tr style={{ background: '#1e293b', color: 'white' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '600' }}>Fitur</th>
+                  <th style={{ padding: '16px', textAlign: 'center', borderLeft: '1px solid #475569' }}>Cluster 0</th>
+                  <th style={{ padding: '16px', textAlign: 'center', borderLeft: '1px solid #475569' }}>Cluster 1</th>
+                  <th style={{ padding: '16px', textAlign: 'center', borderLeft: '1px solid #475569' }}>Cluster 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoricalComparisonData.map((row, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#f8fafc' : 'white' }}>
+                    <td style={{ padding: '14px 16px', fontWeight: '600', color: '#334155' }}>{row.feature}</td>
+                    <td style={{ padding: '14px', textAlign: 'center', color: '#475569' }}>{row.c0}</td>
+                    <td style={{ padding: '14px', textAlign: 'center', color: '#475569' }}>{row.c1}</td>
+                    <td style={{ padding: '14px', textAlign: 'center', color: '#475569' }}>{row.c2}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
-      {/* Converted Cluster Details Cards - Hardcoded */}
-      <div className="cluster-cards-grid">
-        <div className="cluster-card" style={{background: 'linear-gradient(135deg, #667eea, #764ba2)'}}>
-          <h4>🔹 Cluster 0: SIBS Off-Hour</h4>
-          <p><strong>Aplikasi:</strong> SIBS (App 85)</p>
-          <p><strong>SLA Rate:</strong> 36.9%</p>
-          <p><strong>Resolusi:</strong> 5.74 jam</p>
-          <p><strong>Waktu:</strong> Sabtu → Jumat</p>
-          <p style={{fontSize: '0.9rem', opacity: 0.9, marginTop: '10px'}}>Tiket sistem perbankan di luar jam kerja dengan respon cepat</p>
-        </div>
 
-        <div className="cluster-card" style={{background: 'linear-gradient(135deg, #48bb78, #38a169)'}}>
-          <h4>🔹 Cluster 1: ETP Regular</h4>
-          <p><strong>Aplikasi:</strong> ETP (App 97)</p>
-          <p><strong>SLA Rate:</strong> 39.2%</p>
-          <p><strong>Resolusi:</strong> 5.48 jam</p>
-          <p><strong>Waktu:</strong> Senin → Senin</p>
-          <p style={{fontSize: '0.9rem', opacity: 0.9, marginTop: '10px'}}>Tiket reguler jam kerja dengan kinerja stabil dan efisien</p>
-        </div>
-
-        <div className="cluster-card" style={{background: 'linear-gradient(135deg, #f56565, #c53030)'}}>
-          <h4>🔹 Cluster 2: Network Problem</h4>
-          <p><strong>Aplikasi:</strong> Network (App 268)</p>
-          <p><strong>SLA Rate:</strong> 20.7% ⚠️</p>
-          <p><strong>Resolusi:</strong> 6.58 jam</p>
-          <p><strong>Waktu:</strong> Selasa → Selasa</p>
-          <p style={{fontSize: '0.9rem', opacity: 0.9, marginTop: '10px'}}>SLA terburuk - perlu fokus perbaikan dan eskalasi</p>
-        </div>
-
-        <div className="cluster-card" style={{background: 'linear-gradient(135deg, #f6ad55, #ed8936)'}}>
-          <h4>🔹 Cluster 3: ETP Morning</h4>
-          <p><strong>Aplikasi:</strong> ETP (App 97)</p>
-          <p><strong>SLA Rate:</strong> 39.0%</p>
-          <p><strong>Resolusi:</strong> 5.47 jam</p>
-          <p><strong>Waktu:</strong> Senin pagi (10:00)</p>
-          <p style={{fontSize: '0.9rem', opacity: 0.9, marginTop: '10px'}}>Efisiensi tinggi pada awal shift kerja</p>
-        </div>
-      </div>
-      {/* Converted Clustering Insights */}
-      <div style={{marginTop: '30px', padding: '25px', background: 'rgba(255,255,255,0.95)', borderRadius: '15px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)'}}>
-        <h4 style={{color: '#2d3748', marginBottom: '15px'}}>🧭 Insight Clustering K-Prototypes:</h4>
-        <ul style={{color: '#4a5568', lineHeight: '1.8'}}>
-          <li><strong>SKOR SILHOUETTE MODEL FINAL (k=4)</strong> 0.3812</li>
-          <li><strong>Gamma yang digunakan</strong> 0.5000</li>
-          <li><strong>Best Practice:</strong> Cluster 1 dan 3 (ETP) menunjukkan pola operasional paling efisien, terutama pada jam kerja normal dan pagi hari - bisa dijadikan benchmark.</li>
-          <li><strong>Off-Hour Pattern:</strong> Cluster 0 (SIBS) menunjukkan respon cepat di luar jam kerja untuk sistem perbankan kritikal, meski SLA compliance masih bisa ditingkatkan.</li>
-          <li><strong>Pola Waktu:</strong> Terdapat korelasi antara waktu pembuatan tiket dan kinerja SLA - tiket yang dibuat pagi hari cenderung diselesaikan lebih cepat.</li>
-          <li><strong>Rekomendasi:</strong> Fokuskan resource tambahan untuk Network Application (Cluster 2) dan optimalkan proses handling di kategori ini untuk meningkatkan SLA compliance.</li>
-        </ul>
-      </div>
-
-      {/* Error Display */}
-      {error && <p style={{ color: 'red', marginTop: '20px', whiteSpace: 'pre-line' }}>Error fetching data: {error}</p>}
+        </>
+      )}
     </section>
   );
 };

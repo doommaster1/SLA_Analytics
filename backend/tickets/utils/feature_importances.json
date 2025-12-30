@@ -1,50 +1,50 @@
 [
     {
-        "feature": "Days to Due",
-        "importance": 0.21247562359435146
-    },
-    {
-        "feature": "Priority",
-        "importance": 0.1850961844040095
-    },
-    {
         "feature": "Item",
-        "importance": 0.17229011013024464
-    },
-    {
-        "feature": "Category",
-        "importance": 0.12807890168304034
-    },
-    {
-        "feature": "Application Creation Hour",
-        "importance": 0.07589887942047856
-    },
-    {
-        "feature": "Application SLA Deadline Hour",
-        "importance": 0.07138691841433938
+        "importance": 0.2609591183322277
     },
     {
         "feature": "Open Month",
-        "importance": 0.05109665791457535
+        "importance": 0.15167689448512586
     },
     {
-        "feature": "Sub Category",
-        "importance": 0.03933711422101867
+        "feature": "Priority",
+        "importance": 0.14457632087491196
+    },
+    {
+        "feature": "Category",
+        "importance": 0.13983416291361708
+    },
+    {
+        "feature": "Application Creation Hour",
+        "importance": 0.0881146721150898
+    },
+    {
+        "feature": "Application SLA Deadline Hour",
+        "importance": 0.07114817088278094
     },
     {
         "feature": "Application Creation Day of Week",
-        "importance": 0.031379806024513957
+        "importance": 0.058182034955179596
     },
     {
         "feature": "Application SLA Deadline Day of Week",
-        "importance": 0.028353544614604275
+        "importance": 0.053547628243887306
+    },
+    {
+        "feature": "Days to Due",
+        "importance": 0.019639863678189554
+    },
+    {
+        "feature": "Sub Category",
+        "importance": 0.01054912796256337
     },
     {
         "feature": "Is Open Date Off",
-        "importance": 0.0045953747519689725
+        "importance": 0.0017700445660730636
     },
     {
         "feature": "Is Due Date Off",
-        "importance": 1.0884826854943678e-05
+        "importance": 1.960990353878268e-06
     }
 ]

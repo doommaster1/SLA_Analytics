@@ -106,7 +106,7 @@ const Login = () => {
             </div>
         </div>
 
-        <div className="remember-me">
+        {/* <div className="remember-me">
           <input
             type="checkbox"
             id="rememberMe"
@@ -115,13 +115,13 @@ const Login = () => {
             onChange={handleInputChange}
           />
           <label htmlFor="rememberMe">Ingat saya</label>
-        </div>
+        </div> */}
 
-        <div className="forgot-password">
+        {/* <div className="forgot-password">
           <button type="button" onClick={() => alert('Fitur reset password akan segera tersedia.')}>
             Lupa password?
           </button>
-        </div>
+        </div> */}
 
         <button type="submit" className="login-btn" disabled={loading}>
           <i className="fas fa-sign-in-alt"></i>
@@ -136,7 +136,7 @@ const Login = () => {
       <div className="demo-login">
         <h4>Akun Demo untuk Testing</h4>
         <div className="demo-credentials">
-          <span><strong>Username:</strong> admin</span>
+          <span><strong>Email:</strong> admin@company.com</span>
           <span><strong>Password:</strong> admin123</span>
         </div>
       </div>

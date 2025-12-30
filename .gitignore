@@ -1,0 +1,15 @@
+# Folder Virtual Environment Python
+venv/
+env/
+.env
+__pycache__/
+
+# Folder Library JavaScript (Sangat Penting di-ignore!)
+node_modules/
+*/node_modules/
+
+# File Model Besar (>100MB)
+*.pkl
+*.h5
+*.sav
+*.json

@@ -53,8 +53,8 @@ class Ticket(models.Model):
         choices=[
             ('4 - Low', '4 - Low'),
             ('3 - Medium', '3 - Medium'),
-            ('2 - High', '2 - Medium'),
-            ('1 - Critical', '1 - Medium')   
+            ('2 - High', '2 - High'),
+            ('1 - Critical', '1 - Critical')   
         ]
     )
     category = models.CharField(
@@ -71,7 +71,6 @@ class Ticket(models.Model):
             ('penjelasan detail sebuah transaksi', 'penjelasan detail sebuah transaksi'),
             ('application', 'application'),
             ('hardware', 'hardware'),
-            # Tambah dari unique values di CSV jika ada lebih
         ]
     )
     open_date = models.DateTimeField()
@@ -84,8 +83,8 @@ class Ticket(models.Model):
     
     # SLA/ML Features
     is_sla_violated = models.BooleanField(default=False)  # 0/1 dari Random Forest
-    is_open_date_off = models.CharField(max_length=20, choices=[('Hari Kerja', 'Hari Kerja'), ('Hari Libur', 'Hari Libur')])
-    is_due_date_off = models.CharField(max_length=20, choices=[('Hari Kerja', 'Hari Kerja'), ('Hari Libur', 'Hari Libur')])
+    is_open_date_off = models.IntegerField(choices=[(0, 'Hari Kerja'), (1, 'Hari Libur')])
+    is_due_date_off = models.IntegerField(choices=[(0, 'Hari Kerja'), (1, 'Hari Libur')])
     days_to_due = models.IntegerField()
 
     # Temporal Features
