@@ -24,39 +24,55 @@ const Login = () => {
 
   const togglePassword = () => setShowPassword(!showPassword);
 
-  const handleSubmit = async (e) => {
+  // Ganti bagian handleSubmit dengan ini:
+
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
-  // Siapkan payload
+    // Payload
     const payload = {
-        email: formData.email,
+        email: formData.email, // Pastikan backend terima 'email', bukan 'username'
         password: formData.password
     };  
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {  // Allauth URL
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+        const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload), // Gunakan payload yang sudah bersih
+        });
 
-      const data = await response.json(); // Ambil response JSON      
-      if (response.ok) {
-        localStorage.setItem('token', data.key);
-      } else {
-        sessionStorage.setItem('token', data.key);
-      }
-      setTimeout(() => navigate('/dashboard'), 1500);
+        const data = await response.json();
+        
+        if (response.ok) {
+            // JIKA SUKSES
+            localStorage.setItem('token', data.key);
+            setSuccess('Login Berhasil! Mengalihkan...');
+            
+            // Redirect HANYA jika sukses
+            setTimeout(() => navigate('/dashboard'), 1500);
+        } else {
+            // JIKA GAGAL (Password Salah / Email tidak ada)
+            // Tampilkan pesan error dari backend atau pesan default
+            const errorMsg = data.non_field_errors 
+                             ? data.non_field_errors[0] 
+                             : 'Login gagal. Periksa email dan password.';
+            setError(errorMsg);
+            
+            // JANGAN navigate ke dashboard!
+        }
     } 
     catch (err) {
-      setError('Error koneksi');
+        // Error Jaringan (Server mati / Internet putus)
+        console.error(err);
+        setError('Gagal menghubungi server. Cek koneksi internet.');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   return (
     <div className="login-container">

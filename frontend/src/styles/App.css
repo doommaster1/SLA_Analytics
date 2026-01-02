@@ -171,18 +171,24 @@
         .priority-low { color: #48bb78; }
 
         /* Modal Styles */
+
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease;
-        }
+        position: fixed;      /* Kunci posisi ke layar */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Hitam transparan */
+        z-index: 9999;        /* Pastikan paling atas */
+        
+        /* Trik Centering Paling Ampuh */
+        display: flex;
+        align-items: center;  /* Tengah secara Vertikal */
+        justify-content: center; /* Tengah secara Horizontal */
+        
+        /* Opsional: Efek blur */
+        backdrop-filter: blur(4px);
+}
 
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -196,16 +202,20 @@
         }
 
         .modal-content {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 20px;
-            padding: 40px;
-            width: 90%;
-            max-width: 800px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp 0.3s ease;
-        }
+        background: white;
+        width: 90%;           /* Lebar responsif */
+        max-width: 800px;     /* Lebar maksimal */
+        max-height: 90vh;     /* TINGGI MAKSIMAL 90% LAYAR (Penting!) */
+        
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        
+        /* Flex Column: Agar Header diam di atas, Body yang scroll */
+        display: flex;
+        flex-direction: column;
+        padding: 0;           /* Reset padding (diatur di header/body) */
+        position: relative;
+    }
 
         @keyframes slideUp {
             from {
@@ -219,17 +229,24 @@
         }
 
         .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-        }
+        padding: 20px 25px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;    /* Pastikan background putih */
+        border-radius: 15px 15px 0 0; /* Radius atas saja */
+        flex-shrink: 0;       /* Header tidak boleh mengecil */
+    }
 
         .modal-header h2 {
             color: #2d3748;
             font-size: 1.8rem;
+        }
+
+        .modal-body {
+        padding: 25px;
+        overflow-y: auto;     /* Scrollbar otomatis muncul HANYA DISINI */
         }
 
         .close-btn {

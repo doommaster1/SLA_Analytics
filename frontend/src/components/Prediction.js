@@ -43,11 +43,20 @@ const Prediction = () => {
     })
   };
 
+  // Helper Header Token (Sama kayak Dashboard)
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': `Token ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
   // Fetch unique
   useEffect(() => {
     console.log('Fetching unique...');
     setLoadingUnique(true);
-    fetch('http://localhost:8000/api/unique-values/')
+    fetch('http://localhost:8000/api/unique-values/', { headers: getAuthHeaders() })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -109,17 +118,25 @@ const Prediction = () => {
     setLoading(true);
     setResult(null);
     try {
+      // --> PERBAIKAN DI SINI: Panggil getAuthHeaders()
       const response = await fetch('http://localhost:8000/api/predict/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(), // <--- Token wajib ada!
         body: JSON.stringify(formData),
       });
+      
       if (response.ok) {
         const data = await response.json();
         setResult(data);
       } else {
         const errorText = await response.text();
-        alert('Prediksi gagal: ' + errorText);
+        // Coba parse JSON error kalau bisa
+        try {
+            const errJson = JSON.parse(errorText);
+            alert('Prediksi gagal: ' + (errJson.error || errorText));
+        } catch {
+            alert('Prediksi gagal: ' + errorText);
+        }
       }
     } catch (error) {
       alert('Error: ' + error.message);

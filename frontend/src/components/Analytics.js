@@ -99,13 +99,30 @@ const Analytics = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      // 1. AMBIL TOKEN DARI LOCAL STORAGE
+      const token = localStorage.getItem('token'); 
+      
+      // 2. SIAPKAN HEADERS
+      const headers = {
+        'Authorization': `Token ${token}`, // <--- INI KUNCINYA
+        'Content-Type': 'application/json'
+      };
+
       try {
+        // 3. TAMBAHKAN { headers } KE SETIAP FETCH
         const [violRes, trendRes, impRes, clustRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/violation-by-category/${filters}`),
-            fetch(`${API_BASE_URL}/monthly-trend/${filters}`),
-            fetch(`${API_BASE_URL}/feature-importance/`),
-            fetch(`http://localhost:8000/api/clusters/`)
+            fetch(`${API_BASE_URL}/violation-by-category/${filters}`, { headers }),
+            fetch(`${API_BASE_URL}/monthly-trend/${filters}`, { headers }),
+            fetch(`${API_BASE_URL}/feature-importance/`, { headers }),
+            fetch(`http://localhost:8000/api/clusters/`, { headers })
         ]);
+
+        // Cek jika token expired atau tidak valid (401)
+        if (violRes.status === 401 || trendRes.status === 401) {
+            alert("Sesi habis, silakan login ulang.");
+            window.location.href = '/'; // Redirect ke login
+            return;
+        }
 
         const vData = await violRes.json();
         const tData = await trendRes.json();

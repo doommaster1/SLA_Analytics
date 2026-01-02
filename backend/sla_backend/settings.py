@@ -77,7 +77,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # Allauth config
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'  # OTP verifikasi
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # OTP verifikasi
 ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Login via email
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_PASSWORD_MIN_LENGTH = 6
@@ -136,8 +136,7 @@ DATABASES = {
 # DRF settings sederhana
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        # Pastikan ini adalah satu-satunya item di sini (kecuali Anda mau menambah permission lain)
-        'rest_framework.permissions.AllowAny', 
+        'rest_framework.permissions.IsAuthenticated', 
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',

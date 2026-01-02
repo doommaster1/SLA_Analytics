@@ -30,6 +30,14 @@ const Dashboard = () => {
     setCurrentPage(1);
   }, []);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': `Token ${token}`,
+      'Content-Type': 'application/json'
+    };
+  };
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -42,7 +50,7 @@ const Dashboard = () => {
   // Fetch unique (untuk dropdown filter)
   useEffect(() => {
     console.log('Fetching unique filter values...');
-    fetch('http://localhost:8000/api/unique-values/')
+    fetch('http://localhost:8000/api/unique-values/', { headers: getAuthHeaders() }) // <--- TAMBAH INI
       .then(res => {
         if (!res.ok) throw new Error('Gagal mengambil data filter kategori');
         return res.json();
@@ -58,27 +66,27 @@ const Dashboard = () => {
   }, []);
 
   // Fetch stats (DI MODIFIKASI)
+  // Fetch stats (SUDAH DIPERBAIKI)
   useEffect(() => {
     console.log('Fetching stats...');
     setLoadingStats(true);
 
-    // BARU: Logika pembuatan URL yang lebih baik untuk banyak filter
     const params = new URLSearchParams();
-    if (priorityFilter !== 'all') {
-      params.append('priority', priorityFilter);
-    }
-    if (violationFilter !== 'all') {
-      params.append('is_sla_violated', violationFilter);
-    }
+    if (priorityFilter !== 'all') params.append('priority', priorityFilter);
+    if (violationFilter !== 'all') params.append('is_sla_violated', violationFilter);
     
     const queryString = params.toString();
     const url = `http://localhost:8000/api/stats/${queryString ? '?' + queryString : ''}`;
-    
-    console.log('Stats URL:', url); // Debug URL baru
 
-    fetch(url)
+    // HANYA SATU FETCH SAJA, DAN WAJIB PAKAI HEADERS
+    fetch(url, { headers: getAuthHeaders() }) 
       .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        if (res.status === 401) {
+             // Opsional: Redirect jika token expired
+             // window.location.href = '/';
+             throw new Error("Unauthorized");
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(data => {
@@ -89,79 +97,80 @@ const Dashboard = () => {
       .catch(err => {
         console.error('Stats fetch error:', err);
         setLoadingStats(false);
-        setStats({ // Set fallback agar tidak crash
-            total_tickets: 0,
-            violation_count: 0,
-            compliance_count: 0,
-            compliance_rate: 0,
+        // Fallback data nol
+        setStats({ 
+            total_tickets: 0, 
+            violation_count: 0, 
+            compliance_count: 0, 
+            compliance_rate: 0 
         });
       });
-  // BARU: Tambahkan violationFilter sebagai dependency
   }, [priorityFilter, violationFilter]);
 
   // Fetch tickets (DI MODIFIKASI)
+  // Fetch tickets (SUDAH DIPERBAIKI)
   useEffect(() => {
     console.log('Fetching tickets...');
     setLoadingTickets(true);
     
-    // Gunakan URLSearchParams untuk membuat URL
     const params = new URLSearchParams({
       page: currentPage,
       page_size: PAGE_SIZE,
       sort: sortOrder,
     });
 
-    if (searchTerm) {
-      params.append('search', searchTerm);
-    }
-    if (priorityFilter !== 'all') {
-      params.append('priority', priorityFilter);
-    }
-    if (categoryFilter !== 'all') {
-      params.append('category', categoryFilter);
-    }
-    // --- BARU: Tambahkan filter SLA ke query tiket ---
-    if (violationFilter !== 'all') {
-      params.append('is_sla_violated', violationFilter);
-    }
-    // --- AKHIR BARU ---
+    if (searchTerm) params.append('search', searchTerm);
+    if (priorityFilter !== 'all') params.append('priority', priorityFilter);
+    if (categoryFilter !== 'all') params.append('category', categoryFilter);
+    if (violationFilter !== 'all') params.append('is_sla_violated', violationFilter);
 
     const url = `http://localhost:8000/api/tickets/?${params.toString()}`;
-    console.log('Tickets URL:', url);
     
-    fetch(url)
+    // TAMBAHKAN { headers: getAuthHeaders() } DI SINI
+    fetch(url, { headers: getAuthHeaders() }) 
       .then(res => {
+        if (res.status === 401) throw new Error("Unauthorized");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(data => {
         console.log('Tickets data received:', data);
-        setTickets(data.results || []); // Fallback ke array kosong
+        setTickets(data.results || []);
         setTotalPages(Math.ceil((data.count || 0) / PAGE_SIZE));
         setLoadingTickets(false);
       })
       .catch(err => {
         console.error('Tickets fetch error:', err);
         setLoadingTickets(false);
-        setTickets([]); // Set ke array kosong jika error
+        setTickets([]);
       });
-  // BARU: Tambahkan violationFilter sebagai dependency
   }, [currentPage, searchTerm, priorityFilter, categoryFilter, sortOrder, violationFilter]);
 
   const viewTicketDetail = async (ticketNumber) => {
     setLoadingTickets(true);  
     try {
-      const response = await fetch(`http://localhost:8000/api/tickets/${ticketNumber}/`);
+      // PERBAIKAN: Tambahkan { headers: getAuthHeaders() } di sini!
+      // Tanpa ini, Backend akan menolak (Error 401)
+      const response = await fetch(`http://localhost:8000/api/tickets/${ticketNumber}/`, {
+         headers: getAuthHeaders() 
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setSelectedTicket(data);
-        setShowModal(true);
+        setSelectedTicket(data); // Simpan data tiket ke state
+        setShowModal(true);      // Tampilkan modal
       } else {
-        alert('Gagal memuat detail tiket');
+        // Jika token expired (401), backend menolak di sini
+        if (response.status === 401) {
+            alert("Sesi habis. Silakan login ulang.");
+            window.location.href = '/'; 
+        } else {
+            alert('Gagal memuat detail tiket. Status: ' + response.status);
+        }
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error: ' + error.message);
+      alert('Error koneksi: ' + error.message);
     } finally {
       setLoadingTickets(false);  
     }

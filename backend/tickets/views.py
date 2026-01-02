@@ -13,8 +13,11 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import (api_view,  # Update baris ini
+                                       permission_classes)
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import (AllowAny,  # Tambahkan baris ini
+                                        IsAuthenticated)
 from rest_framework.response import Response
 
 from .models import Ticket, UserProfile
@@ -385,27 +388,38 @@ def predict_sla(request):
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny]) # Biar aman kalau diakses sebelum login full, tapi sebaiknya IsAuthenticated
 def get_unique_values(request):
-    # ... (kode get_unique_values tidak berubah) ...
+    """
+    Mengambil daftar unik Category dan Item langsung dari Database.
+    Jauh lebih akurat daripada mengambil dari file .pkl.
+    """
     try:
-        encoders = joblib.load(ENCODERS_PATH)
+        # 1. Ambil Category unik yang ada di DB, urut abjad
+        categories_qs = Ticket.objects.values_list('category', flat=True).distinct().order_by('category')
+        
+        # 2. Ambil Item unik yang ada di DB, urut abjad
+        items_qs = Ticket.objects.values_list('item', flat=True).distinct().order_by('item')
 
+        # 3. Format untuk React-Select { value: '...', label: '...' }
         categories = [
-            {"value": val, "label": val.replace("-", " ").title()} for val in encoders["Category"].classes_ if val not in ["nan", "unknown"]
+            {"value": cat, "label": cat.replace("-", " ").title()} 
+            for cat in categories_qs if cat
         ]
-        items = [{"value": val, "label": val.title()} for val in encoders["Item"].classes_ if val not in ["nan", "unknown"]]
-        sub_categories = [{"value": val, "label": val.title()} for val in encoders["Sub Category"].classes_ if val not in ["nan", "unknown"]]
+        
+        items = [
+            {"value": item, "label": item.title()} 
+            for item in items_qs if item
+        ]
 
-        categories.sort(key=lambda x: x["label"])
-        items.sort(key=lambda x: x["label"])
-        sub_categories.sort(key=lambda x: x["label"])
+        return Response({
+            "categories": categories,
+            "items": items,
+            "sub_categories": [] # Kosongkan jika tidak dipakai
+        })
 
-        return Response({"categories": categories, "items": items, "sub_categories": sub_categories})
-    except FileNotFoundError:
-        return Response({"error": f"File encoders.pkl tidak ditemukan di {ENCODERS_PATH}"}, status=500)
-    except KeyError as e:
-        return Response({"error": f"Key {e} tidak ditemukan di label_encoders.pkl."}, status=500)
     except Exception as e:
+        print(f"Error fetching unique values: {e}")
         return Response({"error": str(e)}, status=500)
 
 
