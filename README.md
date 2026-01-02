@@ -121,7 +121,7 @@ python manage.py runserver
 
 ---
 
-## 💻 Langkah 3: Instalasi Frontend (React)
+## Langkah 3: Instalasi Frontend (React)
 
 Biarkan terminal Backend tetap berjalan. Buka **Terminal Baru**, lalu:
 
