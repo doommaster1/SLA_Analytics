@@ -5,6 +5,24 @@ Project ini dibangun menggunakan **Django** (Backend), **React.js** (Frontend), 
 
 ---
 
+## Latar Belakang
+Teknologi informasi (TI) menjadi fondasi penting dalam mendukung operasional bisnis karena mampu meningkatkan efisiensi, otomatisasi proses, dan daya saing organisasi. Pada sektor perbankan, ketergantungan terhadap TI sangat tinggi karena layanan harus cepat, andal, dan tersedia melalui berbagai kanal digital. Namun, pemanfaatan TI yang masif juga meningkatkan risiko terjadinya insiden layanan. Penanganan insiden secara manual terbukti tidak efektif, sehingga diperlukan sistem IT ticketing berbasis kerangka kerja IT Service Management (ITSM) dan ITIL.
+
+Dalam ITIL, kualitas layanan diukur melalui Service Level Agreement (SLA). Pelanggaran SLA dapat berdampak pada kepuasan nasabah dan kinerja bisnis dan masih sering terjadi pelanggaran setiap tahunnya. Di Bank XXX, penentuan prioritas insiden menggunakan severity matrix yang belum memanfaatkan dataset Ticketing IT secara optimal. Kondisi ini berisiko menyebabkan kesalahan prioritas dan keterlambatan penanganan.
+
+Untuk mengatasi masalah tersebut, dirancang sistem prediksi pelanggaran SLA yang mengintegrasikan analisis data, visualisasi, dan klasifikasi. Sistem ini menggunakan metode K-Prototypes Clustering untuk mengidentifikasi pola prioritas tiket sebagai informasi dan masukan tambahan untuk serverity matrix dan Random Forest Classification untuk memprediksi potensi pelanggaran SLA beserta tingkat keyakinannya. Pendekatan ini diharapkan dapat meningkatkan efektivitas manajemen insiden di Bank XXX serta menjadi kontribusi akademis di bidang ITSM.
+
+---
+
+## Tujuan 
+Pastikan software berikut sudah terinstall di komputer Anda:
+1. Mengidentifikasi pola prioritas tiket dengan baik sehingga memeberkan insight atau informasi penting untuk Severity Matrix, sehingga penentuan prioritas menjadi lebih tepat dan konsisten.
+2. Mengembangkan model prediksi pelanggaran Service Level Agreement (SLA) pada tiket secara efektif untuk meminimalkan serta mencegah terjadinya pelanggaran SLA di masa mendatang.
+3. Menyediakan visualisasi data yang baik untuk merepresentasikan hasil analisis tiket dari metode klasifikasi dan clustering yang digunakan. 
+
+
+---
+
 ## Prasyarat (Prerequisites)
 Pastikan software berikut sudah terinstall di komputer Anda:
 1.  **Python** (v3.8 ke atas)
