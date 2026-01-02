@@ -153,17 +153,7 @@ npm start
 
 ## Catatan Penting Penggunaan
 
-### 1. Verifikasi Email & OTP
-
-Aplikasi ini menggunakan sistem verifikasi email untuk registrasi. Karena masih dalam mode development (`DEBUG = True`), email **TIDAK AKAN DIKIRIM KE GMAIL/INBOX**.
-
-**Cara melihat link verifikasi / OTP:**
-
-1. Lakukan registrasi di website.
-2. Buka **Terminal Backend** (tempat `python manage.py runserver` berjalan).
-3. Link verifikasi atau kode OTP akan muncul di text log terminal tersebut.
-
-### 2. Login Admin
+### 1. Login Admin
 
 Untuk mengakses panel admin dan melihat data tiket:
 
