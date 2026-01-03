@@ -16,7 +16,7 @@ const AppContent = () => {
     setActiveSection(section);
   };
 
-  // Fungsi untuk data Header (hanya untuk non-login routes)
+  // Fungsi untuk data Header
   const getHeaderData = () => {
     const headers = {
       dashboard: { title: 'Dashboard', description: 'Ringkasan status tiket dan informasi SLA' },
@@ -27,7 +27,7 @@ const AppContent = () => {
     return headers[activeSection] || headers.dashboard;
   };
 
-  // Fungsi untuk render konten internal (non-login)
+  // Fungsi untuk render konten internal
   const getContentComponent = () => {
     switch (activeSection) {
       case 'dashboard':

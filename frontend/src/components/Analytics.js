@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bar, Doughnut, Line, Pie, Scatter } from 'react-chartjs-2';
 import { useSearchParams } from 'react-router-dom';
 
-// --- 1. REGISTER KOMPONEN CHART ---
+//  1. REGISTER KOMPONEN CHART 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, BarElement, ScatterController, PieController, ArcElement,
   Title, Tooltip, Legend
@@ -23,7 +23,7 @@ ChartJS.register(
 
 const API_BASE_URL = 'http://localhost:8000/api/stats'; 
 
-// --- 2. WARNA VISUALISASI ---
+//  2. WARNA VISUALISASI 
 const clusterColors = [
   'rgba(59, 130, 246, 0.8)', // Biru
   'rgba(72, 187, 120, 0.8)', // Hijau
@@ -36,7 +36,7 @@ const clusterBorderColors = [
 ];
 
 const Analytics = () => {
-  // --- 3. STATE MANAGEMENT ---
+  //  3. STATE MANAGEMENT 
   const [violationData, setViolationData] = useState(null);
   const [trendData, setTrendData] = useState(null);
   const [importanceData, setImportanceData] = useState(null);
@@ -45,7 +45,7 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
 
-  // --- 4. DATA MANUAL (HARDCODED) UNTUK KARTU & TABEL ---
+  //  4. DATA MANUAL (HARDCODED) UNTUK KARTU & TABEL 
   
   const clusterSummaryData = [
     {
@@ -91,7 +91,7 @@ const Analytics = () => {
     { feature: "Open Month", c0: "July (15.8%)", c1: "July (11.3%)", c2: "February (14.1%)" }
   ];
 
-  // --- 5. FETCH DATA API ---
+  //  5. FETCH DATA API 
   
   const filters = useMemo(() => {
     return `?priority=${searchParams.get('priority') || 'all'}&is_sla_violated=${searchParams.get('is_sla_violated') || 'all'}`;
@@ -104,7 +104,7 @@ const Analytics = () => {
       
       // 2. SIAPKAN HEADERS
       const headers = {
-        'Authorization': `Token ${token}`, // <--- INI KUNCINYA
+        'Authorization': `Token ${token}`, 
         'Content-Type': 'application/json'
       };
 
@@ -143,8 +143,7 @@ const Analytics = () => {
     fetchData();
   }, [filters]);
 
-  // --- 6. FUNGSI PROSES DATA STATISTIK UMUM ---
-
+  //  6. FUNGSI PROSES DATA STATISTIK UMUM 
   const processViolationData = (data) => {
     if (!data?.length) return null;
     const sorted = [...data].sort((a, b) => b.violation_rate - a.violation_rate);
@@ -185,8 +184,7 @@ const Analytics = () => {
     };
   };
 
-  // --- 7. MEMO DATA UNTUK SCATTER & CLUSTER CHARTS (DINAMIS) ---
-  
+  //  7. MEMO DATA UNTUK SCATTER & CLUSTER CHARTS (DINAMIS) 
   // A. Scatter Plots
   const visualScatterData = useMemo(() => {
     if (!clusterAPIData?.visual_scatter?.datasets) return null;
@@ -293,7 +291,7 @@ const Analytics = () => {
     };
   }, [clusterSizePieData]);
 
-  // --- 8. OPSI CHART (OPTIONS) ---
+  //  8. OPSI CHART (OPTIONS) 
   
   const barOptions = { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } };
   const lineOptions = { responsive: true, maintainAspectRatio: false };
@@ -309,12 +307,12 @@ const Analytics = () => {
   };
   const pieOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
 
-  // --- 9. RENDER UTAMA ---
+  //  9. RENDER UTAMA 
   return (
     <section id="analytics" className="content-section active" style={{paddingBottom: '60px'}}>
       {loading ? <div className="text-center p-10" style={{color: '#64748b'}}>Memuat data analitik...</div> : (
         <>
-          {/* --- BAGIAN 1: STATISTIK UMUM --- */}
+          {/*  BAGIAN 1: STATISTIK UMUM  */}
           <div className="chart-grid">
             <div className="chart-container" style={{height: '350px'}}>
               <h4 style={{marginBottom: '15px', color: '#1e293b'}}>Pelanggaran per Kategori</h4>
@@ -333,10 +331,10 @@ const Analytics = () => {
           <hr style={{margin: '50px 0', borderTop: '2px dashed #cbd5e1'}} />
           
           <h3 style={{textAlign: 'center', marginBottom: '40px', color: '#0f172a', fontSize: '1.5rem', fontWeight: 'bold'}}>
-            🔍 Analisis Segmentasi (K-Prototypes)
+             Analisis Segmentasi (K-Prototypes)
           </h3>
 
-          {/* --- BAGIAN 2: SCATTER PLOTS (DINAMIS) --- */}
+          {/*  BAGIAN 2: SCATTER PLOTS (DINAMIS)  */}
           <div className="chart-grid">
             <div className="chart-container" style={{height: '400px'}}>
                <h4 style={{color: '#1e293b'}}>Distribusi Hybrid (UMAP)</h4>
@@ -352,7 +350,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          {/* --- BAGIAN 3: PROFIL CLUSTER (DINAMIS) --- */}
+          {/*  BAGIAN 3: PROFIL CLUSTER (DINAMIS)  */}
           <div className="chart-grid" style={{marginTop: '30px'}}>
             {/* Mean Bar */}
             <div className="chart-container" style={{height: '400px'}}>
@@ -388,7 +386,7 @@ const Analytics = () => {
 
           <div style={{height: '40px'}}></div>
 
-          {/* {--- BAGIAN 4: KARTU DETAIL CLUSTER (MANUAL) --- */}
+          {/* { BAGIAN 4: KARTU DETAIL CLUSTER (MANUAL)  */}
           <div className="cluster-cards-grid">
             {clusterSummaryData.map((cluster) => (
               <div key={cluster.id} className="cluster-card" style={{
@@ -420,7 +418,7 @@ const Analytics = () => {
             ))}
           </div> 
 
-          {/* --- BAGIAN 5: TABEL PERBANDINGAN --- */}
+          {/*  BAGIAN 5: TABEL PERBANDINGAN  */}
           <div style={{ marginTop: '50px', overflowX: 'auto', padding: '0 5px' }}>
             <h4 style={{ color: '#334155', marginBottom: '20px', textAlign: 'center', fontWeight: '600' }}>
                 📋 Perbandingan Modus Fitur Kategorikal

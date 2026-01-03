@@ -47,7 +47,7 @@ const Dashboard = () => {
     handleSearchChange.timeoutId = setTimeout(debouncedSearch, 300);
   };
 
-  // Fetch unique (untuk dropdown filter)
+  //  dropdown filter
   useEffect(() => {
     console.log('Fetching unique filter values...');
     fetch('http://localhost:8000/api/unique-values/', { headers: getAuthHeaders() }) // <--- TAMBAH INI
@@ -65,8 +65,7 @@ const Dashboard = () => {
       });
   }, []);
 
-  // Fetch stats (DI MODIFIKASI)
-  // Fetch stats (SUDAH DIPERBAIKI)
+  // Fetch stats 
   useEffect(() => {
     console.log('Fetching stats...');
     setLoadingStats(true);
@@ -78,12 +77,10 @@ const Dashboard = () => {
     const queryString = params.toString();
     const url = `http://localhost:8000/api/stats/${queryString ? '?' + queryString : ''}`;
 
-    // HANYA SATU FETCH SAJA, DAN WAJIB PAKAI HEADERS
+
     fetch(url, { headers: getAuthHeaders() }) 
       .then(res => {
         if (res.status === 401) {
-             // Opsional: Redirect jika token expired
-             // window.location.href = '/';
              throw new Error("Unauthorized");
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -107,8 +104,7 @@ const Dashboard = () => {
       });
   }, [priorityFilter, violationFilter]);
 
-  // Fetch tickets (DI MODIFIKASI)
-  // Fetch tickets (SUDAH DIPERBAIKI)
+  // Fetch tickets 
   useEffect(() => {
     console.log('Fetching tickets...');
     setLoadingTickets(true);
@@ -126,7 +122,6 @@ const Dashboard = () => {
 
     const url = `http://localhost:8000/api/tickets/?${params.toString()}`;
     
-    // TAMBAHKAN { headers: getAuthHeaders() } DI SINI
     fetch(url, { headers: getAuthHeaders() }) 
       .then(res => {
         if (res.status === 401) throw new Error("Unauthorized");
@@ -149,18 +144,15 @@ const Dashboard = () => {
   const viewTicketDetail = async (ticketNumber) => {
     setLoadingTickets(true);  
     try {
-      // PERBAIKAN: Tambahkan { headers: getAuthHeaders() } di sini!
-      // Tanpa ini, Backend akan menolak (Error 401)
       const response = await fetch(`http://localhost:8000/api/tickets/${ticketNumber}/`, {
          headers: getAuthHeaders() 
       });
 
       if (response.ok) {
         const data = await response.json();
-        setSelectedTicket(data); // Simpan data tiket ke state
-        setShowModal(true);      // Tampilkan modal
+        setSelectedTicket(data); 
+        setShowModal(true);      
       } else {
-        // Jika token expired (401), backend menolak di sini
         if (response.status === 401) {
             alert("Sesi habis. Silakan login ulang.");
             window.location.href = '/'; 
@@ -187,7 +179,7 @@ const Dashboard = () => {
     }
   };
 
-  // Handler untuk clear filter (DI MODIFIKASI)
+  // Handler untuk clear filter
   const clearFilters = () => {
     setSearchTerm('');
     setPriorityFilter('all');
@@ -201,7 +193,7 @@ const Dashboard = () => {
     padding: '10px', 
     borderRadius: '8px', 
     border: '1px solid #e2e8f0',
-    backgroundColor: 'white' // Pastikan background putih
+    backgroundColor: 'white' 
   };
 
   return (
@@ -252,7 +244,7 @@ const Dashboard = () => {
           <option value="1 - Critical">Critical</option>
         </select>
         
-        {/* --- BARU: Dropdown Filter SLA --- */}
+        {/* Dropdown Filter SLA */}
         <select
           value={violationFilter}
           onChange={(e) => { setViolationFilter(e.target.value); setCurrentPage(1); }}
@@ -262,7 +254,7 @@ const Dashboard = () => {
           <option value="true">Melanggar</option>
           <option value="false">Tidak Melanggar</option>
         </select>
-        {/* --- AKHIR BARU --- */}
+        {/*  AKHIR BARU  */}
 
         <select
           value={categoryFilter}
@@ -299,7 +291,7 @@ const Dashboard = () => {
             <th>ID Tiket</th>
             <th>Item</th>
             <th>Prioritas</th>
-            {/* BARU: Tambah kolom Status SLA */}
+            {/* Kolom Status SLA */}
             <th>Status SLA</th> 
             <th>Kategori</th>
             <th>Dibuat</th>
@@ -307,13 +299,11 @@ const Dashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {/* Pastikan `tickets` adalah array sebelum mapping */}
           {Array.isArray(tickets) && tickets.map((ticket) => (
             <tr key={ticket.number}>
               <td>{ticket.number}</td>
               <td>{ticket.item}</td>
               <td><span className={`priority-${ticket.priority.replace(' - ', '-').toLowerCase()}`}>{ticket.priority}</span></td>
-              {/* BARU: Tampilkan Status SLA */}
               <td>
                 <span className={ticket.is_sla_violated ? 'sla-violated' : 'sla-safe'}>
                   {ticket.is_sla_violated ? 'Melanggar' : 'Aman'}

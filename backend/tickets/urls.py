@@ -14,7 +14,7 @@ urlpatterns = [
     path('predict/', predict_sla, name='predict_sla'),  
     path('unique-values/', get_unique_values, name='unique_values'),
     path('stats/violation-by-category/', get_violation_by_category, name='violation_by_category'),
-    path('stats/monthly-trend/', get_monthly_trend, name='monthly_trend'), # Tambah URL ini
+    path('stats/monthly-trend/', get_monthly_trend, name='monthly_trend'), 
     path('stats/feature-importance/', get_feature_importance, name='feature_importance'),
-    path('clusters/', get_clusters, name='clusters'),  # Baru
+    path('clusters/', get_clusters, name='clusters'), 
 ]

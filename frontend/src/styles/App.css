@@ -173,18 +173,18 @@
         /* Modal Styles */
 
         .modal {
-        position: fixed;      /* Kunci posisi ke layar */
+        position: fixed;      
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Hitam transparan */
-        z-index: 9999;        /* Pastikan paling atas */
+        background-color: rgba(0, 0, 0, 0.5); 
+        z-index: 9999;        
         
         /* Trik Centering Paling Ampuh */
         display: flex;
-        align-items: center;  /* Tengah secara Vertikal */
-        justify-content: center; /* Tengah secara Horizontal */
+        align-items: center;  
+        justify-content: center;
         
         /* Opsional: Efek blur */
         backdrop-filter: blur(4px);
@@ -203,9 +203,9 @@
 
         .modal-content {
         background: white;
-        width: 90%;           /* Lebar responsif */
-        max-width: 800px;     /* Lebar maksimal */
-        max-height: 90vh;     /* TINGGI MAKSIMAL 90% LAYAR (Penting!) */
+        width: 90%;           
+        max-width: 800px;    
+        max-height: 90vh;     
         
         border-radius: 15px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
@@ -213,7 +213,7 @@
         /* Flex Column: Agar Header diam di atas, Body yang scroll */
         display: flex;
         flex-direction: column;
-        padding: 0;           /* Reset padding (diatur di header/body) */
+        padding: 0;           
         position: relative;
     }
 
@@ -234,9 +234,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: white;    /* Pastikan background putih */
-        border-radius: 15px 15px 0 0; /* Radius atas saja */
-        flex-shrink: 0;       /* Header tidak boleh mengecil */
+        background: white;    
+        border-radius: 15px 15px 0 0; 
+        flex-shrink: 0;     
     }
 
         .modal-header h2 {
@@ -246,7 +246,7 @@
 
         .modal-body {
         padding: 25px;
-        overflow-y: auto;     /* Scrollbar otomatis muncul HANYA DISINI */
+        overflow-y: auto;     
         }
 
         .close-btn {

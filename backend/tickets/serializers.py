@@ -1,7 +1,10 @@
-from rest_framework import serializers
-from .models import Ticket
-from django.utils import timezone
 from datetime import datetime
+
+from django.utils import timezone
+from rest_framework import serializers
+
+from .models import Ticket
+
 
 class TicketSerializer(serializers.ModelSerializer):
     # Format date untuk readable di frontend
@@ -24,17 +27,3 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def get_compliance_rate_percent(self, obj):
         return f"{obj.application_sla_compliance_rate * 100:.1f}%"
-
-# class StatsSerializer(serializers.Serializer):
-#     total_tickets = serializers.IntegerField()
-#     violation_count = serializers.IntegerField()
-#     compliance_count = serializers.IntegerField()
-#     compliance_rate = serializers.FloatField()  # %
-
-#     # Tambahan stats berdasarkan CSV (e.g., per priority/category)
-#     low_priority_count = serializers.IntegerField()
-#     medium_priority_count = serializers.IntegerField()
-#     high_priority_count = serializers.IntegerField()
-#     critical_priority_count = serializers.IntegerField()
-#     avg_resolution_duration = serializers.FloatField()
-#     avg_compliance_rate = serializers.FloatField()

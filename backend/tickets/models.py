@@ -79,7 +79,7 @@ class Ticket(models.Model):
     time_left_incl_on_hold = models.FloatField()  # Bisa negatif
 
     # Descriptions
-    item = models.CharField(max_length=100)  # e.g., 'application 84'
+    item = models.CharField(max_length=100)  
     
     # SLA/ML Features
     is_sla_violated = models.BooleanField(default=False)  # 0/1 dari Random Forest

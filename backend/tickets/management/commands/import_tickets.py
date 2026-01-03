@@ -9,33 +9,23 @@ from tickets.models import Ticket
 
 class Command(BaseCommand):
     help = 'Import tickets from CSV'
-
     def handle(self, *args, **options):
-        # ... (kode path file Anda sudah benar) ...
         csv_path = os.path.join('tickets', 'management', 'commands', 'processed_tickets.csv')
         
         if not os.path.exists(csv_path):
             self.stdout.write(self.style.ERROR(f"File tidak ditemukan: {csv_path}"))
             return
-        
-        self.stdout.write(f"File ditemukan: {csv_path}")
-        
-        # ----- BARU: Buat mapping untuk prioritas -----
+        self.stdout.write(f"File ditemukan: {csv_path}")  
         priority_mapping = {
             'Low': '4 - Low',
             'Medium': '3 - Medium',
-            '2 - High': '2 - High',  # Amankan nilai yang sudah benar
+            '2 - High': '2 - High',  
             'Critical': '1 - Critical',
-            # Tambahkan nilai lain jika ada, misal:
-            # '1 - Critical': '1 - Critical' 
         }
-        # ---------------------------------------------
-        
         with open(csv_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
-            imported_count = 0
+            imported_count = 0   
             
-            # Hapus data lama sebelum impor baru (WAJIB!)
             self.stdout.write("Menghapus data tiket lama...")
             Ticket.objects.all().delete()
             self.stdout.write("Data lama dihapus.")
@@ -46,27 +36,15 @@ class Command(BaseCommand):
                     due_date_naive = datetime.strptime(row['Due Date'], '%Y-%m-%d %H:%M:%S')
                     closed_date_naive = None
                     if row['Closed Date']:
-                        closed_date_naive = datetime.strptime(row['Closed Date'], '%Y-%m-%d %H:%M:%S')
-                    
-                    # ----- PERUBAHAN DI SINI -----
-                    # Ambil nilai prioritas dari CSV
-                    raw_priority = row['Priority']
-                    # Map ke nilai yang konsisten
-                    # .get() akan menggunakan nilai default (raw_priority itu sendiri) jika tidak ada di map
-                    # Tapi kita ingin memastikan HANYA nilai yang ter-map yang masuk
-                    mapped_priority = priority_mapping.get(raw_priority)
-
-                    # Jika mapping tidak ditemukan, lewati baris ini atau beri peringatan
+                        closed_date_naive = datetime.strptime(row['Closed Date'], '%Y-%m-%d %H:%M:%S')                                                            
+                    raw_priority = row['Priority']                                     
+                    mapped_priority = priority_mapping.get(raw_priority)                    
                     if not mapped_priority:
                          self.stdout.write(self.style.WARNING(f"Skipping row {row.get('Number')}: Prioritas '{raw_priority}' tidak dikenal."))
-                         continue
-                    # -----------------------------
-
+                         continue                    
                     Ticket.objects.create(
-                        number=row['Number'],             
-                        
-                        priority=mapped_priority,  # <-- Gunakan nilai yang sudah di-map
-                        
+                        number=row['Number'],                                     
+                        priority=mapped_priority,                          
                         category=row['Category'],
                         open_date=timezone.make_aware(open_date_naive),
                         closed_date=timezone.make_aware(closed_date_naive) if closed_date_naive else None,

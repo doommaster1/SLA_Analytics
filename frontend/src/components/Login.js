@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Untuk redirect
+import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
 
 const Login = () => {
@@ -24,8 +24,6 @@ const Login = () => {
 
   const togglePassword = () => setShowPassword(!showPassword);
 
-  // Ganti bagian handleSubmit dengan ini:
-
 const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -34,7 +32,7 @@ const handleSubmit = async (e) => {
 
     // Payload
     const payload = {
-        email: formData.email, // Pastikan backend terima 'email', bukan 'username'
+        email: formData.email, 
         password: formData.password
     };  
 
@@ -42,7 +40,7 @@ const handleSubmit = async (e) => {
         const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload), // Gunakan payload yang sudah bersih
+            body: JSON.stringify(payload), 
         });
 
         const data = await response.json();
@@ -56,7 +54,7 @@ const handleSubmit = async (e) => {
             setTimeout(() => navigate('/dashboard'), 1500);
         } else {
             // JIKA GAGAL (Password Salah / Email tidak ada)
-            // Tampilkan pesan error dari backend atau pesan default
+            // Menampilkan pesan error dari backend atau pesan default
             const errorMsg = data.non_field_errors 
                              ? data.non_field_errors[0] 
                              : 'Login gagal. Periksa email dan password.';
@@ -93,10 +91,10 @@ const handleSubmit = async (e) => {
           <div className="input-wrapper">
             <i className="fas fa-user"></i>
             <input
-              type="email" // Tipe bisa diubah jadi email untuk validasi
-              id="email"   // UBAH INI
-              name="email"  // UBAH INI
-              value={formData.email} // Sesuaikan
+              type="email" 
+              id="email"   
+              name="email"  
+              value={formData.email} 
               onChange={handleInputChange}
               placeholder="Masukkan email Anda"
               required
@@ -105,7 +103,6 @@ const handleSubmit = async (e) => {
         </div>
 
         <div className="form-group">
-            {/* ... (Input password tetap sama, name="password" sudah benar) ... */}
             <label htmlFor="password">Password</label>
             <div className="input-wrapper">
                 <i className="fas fa-lock"></i>
@@ -121,23 +118,6 @@ const handleSubmit = async (e) => {
                 <i className={`fas fa-eye${showPassword ? '-slash' : ''} password-toggle`} onClick={togglePassword}></i>
             </div>
         </div>
-
-        {/* <div className="remember-me">
-          <input
-            type="checkbox"
-            id="rememberMe"
-            name="rememberMe"
-            checked={formData.rememberMe}
-            onChange={handleInputChange}
-          />
-          <label htmlFor="rememberMe">Ingat saya</label>
-        </div> */}
-
-        {/* <div className="forgot-password">
-          <button type="button" onClick={() => alert('Fitur reset password akan segera tersedia.')}>
-            Lupa password?
-          </button>
-        </div> */}
 
         <button type="submit" className="login-btn" disabled={loading}>
           <i className="fas fa-sign-in-alt"></i>

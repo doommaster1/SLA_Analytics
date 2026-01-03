@@ -126,7 +126,7 @@ const TicketDetailModal = ({ ticket, onClose }) => {
               )}
             </div>
 
-        </div> {/* End of modal-body */}
+        </div> 
       </div>
     </div>
   );
