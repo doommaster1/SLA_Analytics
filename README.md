@@ -1,10 +1,5 @@
 # SLA Predictor - Skripsi Project
-
-Aplikasi prediksi SLA tiket menggunakan algoritma Random Forest dan K-Prototypes.
-Project ini dibangun menggunakan **Django** (Backend), **React.js** (Frontend), dan **PostgreSQL** (Database).
-
 ---
-
 ## Latar Belakang
 Teknologi informasi (TI) menjadi fondasi penting dalam mendukung operasional bisnis karena mampu meningkatkan efisiensi, otomatisasi proses, dan daya saing organisasi. Pada sektor perbankan, ketergantungan terhadap TI sangat tinggi karena layanan harus cepat, andal, dan tersedia melalui berbagai kanal digital. Namun, pemanfaatan TI yang masif juga meningkatkan risiko terjadinya insiden layanan. Penanganan insiden secara manual terbukti tidak efektif, sehingga diperlukan sistem IT ticketing berbasis kerangka kerja IT Service Management (ITSM) dan ITIL.
 
@@ -120,7 +115,7 @@ from django.contrib.auth.hashers import make_password
 user = User.objects.create_user(
     username='...',
     email='...',
-    password='admin123'  # Plain text, Django hash otomatis
+    password='...'  # Plain text, Django hash otomatis
 )
 
 # Buat profile
