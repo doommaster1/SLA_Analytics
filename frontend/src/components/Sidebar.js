@@ -1,4 +1,3 @@
-import React from 'react';
 
 const Sidebar = ({ activeSection, onNavClick }) => {
   const navItems = [
@@ -17,7 +16,7 @@ const Sidebar = ({ activeSection, onNavClick }) => {
       <ul className="nav-menu">
         {navItems.map((item) => (
           <li key={item.id} className="nav-item">
-            <button  // Ganti <a> ke <button> (fix ESLint)
+            <button  
               className={`nav-link ${activeSection === item.id ? 'active' : ''}`}
               onClick={() => onNavClick(item.id)}
               style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left' }}  // Style seperti link

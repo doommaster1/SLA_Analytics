@@ -11,13 +11,13 @@ class TicketSerializer(serializers.ModelSerializer):
     open_date = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False)
     closed_date = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False)
     due_date = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False)
-    sla_violated_text = serializers.SerializerMethodField()  # 'Ya'/'Tidak' untuk frontend
-    resolution_duration_formatted = serializers.SerializerMethodField()  # e.g., '2.725 hari'
+    sla_violated_text = serializers.SerializerMethodField()  
+    resolution_duration_formatted = serializers.SerializerMethodField()  
     compliance_rate_percent = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
-        fields = '__all__'  # Semua fields dari model (sesuai CSV)
+        fields = '__all__'  # Semua fields dari model 
     
     def get_sla_violated_text(self, obj):
         return 'Ya' if obj.is_sla_violated else 'Tidak'

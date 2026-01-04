@@ -160,7 +160,6 @@ const Prediction = () => {
       <h3>Prediksi SLA untuk Tiket Baru</h3>
       <form onSubmit={handleSubmit} method="post">
         
-        {/* Priority tetap pakai Select biasa karena pilihannya sedikit */}
         <div className="form-group">
           <label>Priority:</label>
           <select name="priority" value={formData.priority} onChange={handleInputChange} required>
@@ -172,30 +171,28 @@ const Prediction = () => {
           </select>
         </div>
 
-        {/* --- CATEGORY MENGGUNAKAN REACT-SELECT --- */}
+        {/* CATEGORY MENGGUNAKAN REACT-SELECT */}
         <div className="form-group">
           <label>Category:</label>
           <Select
             name="category"
             options={uniqueOptions.categories}
-            // Cari object opsi yang value-nya sama dengan state formData.category
             value={uniqueOptions.categories.find(opt => opt.value === formData.category) || null}
             onChange={handleReactSelectChange}
             placeholder="Cari atau Pilih Category..."
             isClearable
             isSearchable
             styles={customStyles}
-            required // Note: required html5 tidak jalan sempurna di div react-select, validasi manual di handleSubmit sudah cukup
+            required 
           />
         </div>
 
-        {/* --- ITEM MENGGUNAKAN REACT-SELECT --- */}
+        {/* ITEM MENGGUNAKAN REACT-SELECT */}
         <div className="form-group">
           <label>Item:</label>
           <Select
             name="item"
             options={uniqueOptions.items}
-            // Cari object opsi yang value-nya sama dengan state formData.item
             value={uniqueOptions.items.find(opt => opt.value === formData.item) || null}
             onChange={handleReactSelectChange}
             placeholder="Cari atau Pilih Item..."
