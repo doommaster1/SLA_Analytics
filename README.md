@@ -20,7 +20,7 @@ Pastikan software berikut sudah terinstall di komputer Anda:
 
 ## Prasyarat (Prerequisites)
 Pastikan software berikut sudah terinstall di komputer Anda:
-1.  **Python** (v3.8 ke atas)
+1.  **Python** (v3.10 atau v3.11 Disarankan)
 2.  **Node.js & npm** (untuk menjalankan React)
 3.  **PostgreSQL** (dan pgAdmin untuk manajemen database)
 4.  **Git**
@@ -77,7 +77,18 @@ venv\Scripts\activate
 **3. Install Library Python**
 
 ```bash
+# 1. Install requirements dasar
 pip install -r requirements.txt
+
+```
+```bash
+# 2. Install library autentikasi (Wajib)
+pip install -r requirements.txt
+
+```
+```bash
+# 3. Update library Data Science (untuk menghindari error versi)
+pip install --upgrade joblib scikit-learn pandas numpy category-encoders
 
 ```
 
@@ -97,8 +108,14 @@ python manage.py makemigrations
 python manage.py migrate
 
 ```
+**6. Import Data Awal (Dataset Tiket)**
 
-**6. Buat Superuser (Admin)**
+```bash
+python manage.py import_tickets
+
+```
+
+**7. Buat Superuser (Admin)**
 Buka Shell
 
 ```bash
@@ -173,12 +190,25 @@ npm start
 ---
 
 ## Catatan Penting Penggunaan
+### 1. Login Aplikasi
 
-### 1. Login Admin
+Gunakan email dan password yang Anda buat pada Langkah 2 Poin 7 (Buat Superuser) untuk masuk ke halaman login React.
+
+---
+
+### 2. Login Admin
 
 Untuk mengakses panel admin dan melihat data tiket:
 
 * URL: https://www.google.com/search?q=http://127.0.0.1:8000/admin/
 * Gunakan akun superuser yang dibuat pada Langkah 2 poin 6.
+
+---
+
+### 3. Databas
+
+Untuk mengakses database yang digunakan, mohon dapat membuka link drive berikut:
+
+https://drive.google.com/drive/folders/1mkNeO5MmEhyn3Yh_hHa0IM6G0OXpGjq5?usp=sharing
 
 ---
