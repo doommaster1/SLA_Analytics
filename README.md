@@ -104,11 +104,37 @@ python manage.py migrate
 ```
 
 **6. Buat Superuser (Admin)**
+Buka Shell
 
 ```bash
-python manage.py createsuperuser
+python manage.py shell
 
 ```
+Kode untuk Buat User (Isi tanda Kutip dibawah)
+```bash
+from django.contrib.auth.models import User
+from tickets.models import UserProfile
+from django.contrib.auth.hashers import make_password
+
+# Buat user
+user = User.objects.create_user(
+    username='...',
+    email='...',
+    password='admin123'  # Plain text, Django hash otomatis
+)
+
+# Buat profile
+profile = UserProfile.objects.create(
+    user=user,
+    role='user',  # Atau 'admin'
+    email_verified=False  # Skip OTP untuk test
+)
+
+print(f"User {user.email} dibuat dengan role {profile.role}")
+exit()  # Keluar shell
+
+```
+
 
 **7. Jalankan Server Django**
 
